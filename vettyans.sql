@@ -178,9 +178,9 @@ SELECT
     END AS refund_processable_flag
 FROM
     transactions AS t;
-
-Note on Time Calculation: The exact function for calculating the difference in hours between two timestamps (t.refund_item and t.purchase_time) varies significantly across SQL databases (e.g., TIMESTAMPDIFF(HOUR, ...) in MySQL, DATE_PART('hour', ...) in PostgreSQL). The conceptual logic remains: calculate the difference and check if it's less than or equal to 72.
 /* -----------------------------------------------------------
+Note on Time Calculation: The exact function for calculating the difference in hours between two timestamps (t.refund_item and t.purchase_time) varies significantly across SQL databases (e.g., TIMESTAMPDIFF(HOUR, ...) in MySQL, DATE_PART('hour', ...) in PostgreSQL). The conceptual logic remains: calculate the difference and check if it's less than or equal to 72.
+
 Task 7: Second Purchase Rank
 Goal: Create a rank by buyer_id and filter for only the second purchase per buyer (ignoring refunds).This task requires a Window Function, specifically ROW_NUMBER(), to assign a sequential rank within each group (PARTITION BY buyer_id), ordered by time (ORDER BY purchase_time).
 ----------------------------------------------------------- */
@@ -212,6 +212,32 @@ WHERE
     r.purchase_rank = 2;
 
 /* -----------------------------------------------------------
+Task 8: Second Transaction Time per Buyer
+Goal: Find the second transaction time per buyer (do not use min/max; assume there were more transactions per buyer).Here it asks for the second transaction overall, not filtered by refunds, and only for the buyer_id and timestamp. We use the same ROW_NUMBER() window function.
+
+----------------------------------------------------------- */
+
+
+WITH RankedTransactions AS (
+    SELECT
+        t.buyer_id,
+        t.purchase_time,
+        -- Assign a rank to each transaction for the same buyer, ordered by time
+        ROW_NUMBER() OVER (
+            PARTITION BY t.buyer_id
+            ORDER BY t.purchase_time
+        ) AS transaction_rank
+    FROM
+        transactions AS t
+)
+SELECT
+    r.buyer_id,
+    r.purchase_time
+FROM
+    RankedTransactions AS r
+-- Filter for only the second transaction (rank = 2)
+WHERE
+    r.transaction_rank = 2;
 
 
 
