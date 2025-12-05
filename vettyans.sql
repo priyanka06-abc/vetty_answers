@@ -181,6 +181,38 @@ FROM
 
 Note on Time Calculation: The exact function for calculating the difference in hours between two timestamps (t.refund_item and t.purchase_time) varies significantly across SQL databases (e.g., TIMESTAMPDIFF(HOUR, ...) in MySQL, DATE_PART('hour', ...) in PostgreSQL). The conceptual logic remains: calculate the difference and check if it's less than or equal to 72.
 /* -----------------------------------------------------------
+Task 7: Second Purchase Rank
+Goal: Create a rank by buyer_id and filter for only the second purchase per buyer (ignoring refunds).This task requires a Window Function, specifically ROW_NUMBER(), to assign a sequential rank within each group (PARTITION BY buyer_id), ordered by time (ORDER BY purchase_time).
+----------------------------------------------------------- */
+
+WITH RankedPurchases AS (
+    SELECT
+        t.*,
+        -- Assign a rank to each purchase for the same buyer, ordered by purchase time
+        ROW_NUMBER() OVER (
+            PARTITION BY t.buyer_id
+            ORDER BY t.purchase_time
+        ) AS purchase_rank
+    FROM
+        transactions AS t
+    -- IMPORTANT: Filter out refunded items as requested (refund_item IS NULL)
+    WHERE
+        t.refund_item IS NULL
+)
+SELECT
+    r.buyer_id,
+    r.purchase_time,
+    r.store_id,
+    r.item_id,
+    r.gross_transaction_value
+FROM
+    RankedPurchases AS r
+-- Filter for only the second purchase (rank = 2)
+WHERE
+    r.purchase_rank = 2;
+
+/* -----------------------------------------------------------
+
 
 
 
