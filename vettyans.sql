@@ -80,3 +80,31 @@ ORDER BY
     t.store_id;
 
 /* -----------------------------------------------------------
+4. Gross Transaction Value of Every Store's First Order
+Goal: Find the transaction value for the very first order placed at each unique store.
+----------------------------------------------------------- */
+
+
+WITH StoreFirstOrder AS (
+    SELECT
+        t.store_id,
+        t.gross_transaction_value,
+        -- Rank each transaction within a store, ordered by purchase time
+        ROW_NUMBER() OVER (
+            PARTITION BY t.store_id
+            ORDER BY t.purchase_time
+        ) AS transaction_rank
+    FROM
+        transactions AS t
+)
+SELECT
+    s.store_id,
+    s.gross_transaction_value
+FROM
+    StoreFirstOrder AS s
+WHERE
+    s.transaction_rank = 1 -- Filter for the first order only
+ORDER BY
+    s.store_id;
+
+/* -----------------------------------------------------------
