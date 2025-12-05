@@ -156,4 +156,31 @@ Answer: chair, jewelry, lounge chair, airpods, bracelet, and tops all share the 
 ----------------------------------------------------------- */
 
 /* -----------------------------------------------------------
+Task 6: Refund Processing Flag
+Goal: Create a flag in the transactions table indicating if a refund can be processed. The condition is that the refund must happen within 72 hours (3 days) of the purchase_time.
+Assuming the time difference is calculated in hours:
+----------------------------------------------------------- */
+
+SELECT
+    *,
+    CASE
+        -- Check if refund_item is NOT NULL AND the time difference in hours is <= 72
+        WHEN t.refund_item IS NOT NULL AND (
+            JULIANDAY(t.refund_item) - JULIANDAY(t.purchase_time)
+        ) * 24 * 60 * 60 <= 72 * 60 * 60 -- Calculation might vary based on SQL dialect (e.g., SQLite, MySQL, PostgreSQL)
+        -- Using DATEDIFF/TIMESTAMPDIFF for clarity, assuming a dialect that supports it
+        -- For MySQL:
+        -- TIMESTAMPDIFF(HOUR, t.purchase_time, t.refund_item) <= 72
+        -- For PostgreSQL:
+        -- EXTRACT(EPOCH FROM (t.refund_item - t.purchase_time)) / 3600 <= 72
+        THEN 'Refund Processed'
+        ELSE 'Not Processed/No Refund'
+    END AS refund_processable_flag
+FROM
+    transactions AS t;
+
+Note on Time Calculation: The exact function for calculating the difference in hours between two timestamps (t.refund_item and t.purchase_time) varies significantly across SQL databases (e.g., TIMESTAMPDIFF(HOUR, ...) in MySQL, DATE_PART('hour', ...) in PostgreSQL). The conceptual logic remains: calculate the difference and check if it's less than or equal to 72.
+/* -----------------------------------------------------------
+
+
 
