@@ -56,4 +56,27 @@ Answer: 0
 ----------------------------------------------------------- */
 
 /* -----------------------------------------------------------
+3. Shortest Interval (in min) from Purchase to Refund Time for Each Store
+Goal: Calculate the shortest duration (in minutes) between the purchase_time and refund_item for each store that processed a refund.
+----------------------------------------------------------- */
 
+SELECT
+    t.store_id,
+    -- Find the minimum time difference (in minutes) for each store
+    MIN(
+        -- Calculate the difference in seconds, then convert to minutes
+        (JULIANDAY(t.refund_item) - JULIANDAY(t.purchase_time)) * 24 * 60
+        -- Note: The function for time difference varies by SQL dialect.
+        -- Use TIMESTAMPDIFF(MINUTE, t.purchase_time, t.refund_item) for MySQL,
+        -- or EXTRACT(EPOCH FROM (t.refund_item - t.purchase_time)) / 60 for PostgreSQL.
+    ) AS shortest_refund_interval_minutes
+FROM
+    transactions AS t
+WHERE
+    t.refund_item IS NOT NULL -- Only consider transactions with a refund
+GROUP BY
+    t.store_id
+ORDER BY
+    t.store_id;
+
+/* -----------------------------------------------------------
