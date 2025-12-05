@@ -108,3 +108,52 @@ ORDER BY
     s.store_id;
 
 /* -----------------------------------------------------------
+5. Most Popular Item Name on Buyers' First Purchase
+Goal: Determine which item name appears most frequently among the very first purchases made by each unique buyer.
+----------------------------------------------------------- */
+
+
+WITH BuyerFirstPurchase AS (
+    SELECT
+        t.store_id,
+        t.item_id,
+        -- Rank each transaction within a buyer, ordered by purchase time
+        ROW_NUMBER() OVER (
+            PARTITION BY t.buyer_id
+            ORDER BY t.purchase_time
+        ) AS transaction_rank
+    FROM
+        transactions AS t
+    -- Filter out transactions where the time is the same to ensure distinct ranking for the earliest time,
+    -- though ROW_NUMBER handles ties deterministically.
+),
+FirstPurchaseItems AS (
+    SELECT
+        i.item_name
+    FROM
+        BuyerFirstPurchase AS bfp
+    INNER JOIN
+        items AS i
+        ON bfp.store_id = i.store_id AND bfp.item_id = i.item_id
+    WHERE
+        bfp.transaction_rank = 1 -- Select only the first purchase
+)
+SELECT
+    fpi.item_name,
+    COUNT(fpi.item_name) AS item_count
+FROM
+    FirstPurchaseItems AS fpi
+GROUP BY
+    fpi.item_name
+ORDER BY
+    item_count DESC
+LIMIT 1; -- Get the item name with the highest count
+/* -----------------------------------------------------------
+
+Result: All items appear only once in the first purchases. Therefore, any of them could be returned, but the query will likely return the item that is alphabetically first (or the first one encountered during grouping) since they all have a count of 1.
+
+Answer: chair, jewelry, lounge chair, airpods, bracelet, and tops all share the highest popularity score of 1. The query above will return one of these items.
+----------------------------------------------------------- */
+
+/* -----------------------------------------------------------
+
